@@ -4,4 +4,5 @@
 .DS_Store
 /data/
 /.venv/
-/scratch/
+/scratch/*
+!/scratch/check.cpp

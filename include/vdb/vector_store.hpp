@@ -28,6 +28,18 @@ private:
     std::array<float, N> data_; 
 };
 
+template<size_t dim> 
+float l2_distance(const ColumnVector<dim>& a, const ColumnVector<dim>& b) {
+    const size_t kLanes = 8;
+    std::array<float, kLanes> s{};
+    for (std::size_t i = 0; i < dim; i += kLanes) {
+        for (std::size_t j = 0; j < kLanes; ++j) {
+            s[j] += std::pow((a[i+j]) - (b[i+j]), 2.0f);
+        }
+    }
+    return std::reduce(s.begin(), s.end(), 0.0f);
+}
+
 using Id = std::uint64_t;
 // A flat (brute-force) in-memory store of fixed-dimension float vectors.
 //
@@ -78,17 +90,6 @@ public:
     [[nodiscard]] std::size_t size() const noexcept { return ids_.size(); }
 
 private:
-    float l2_distance(const ColumnVector<dim>& a, const ColumnVector<dim>& b) const {
-        const size_t kLanes = 8;
-        std::array<float, kLanes> s{};
-        for (std::size_t i = 0; i < dim; i += kLanes) {
-            for (std::size_t j = 0; j < kLanes; ++j) {
-                s[j] += std::pow((a[i+j]) - (b[i+j]), 2.0f);
-            }
-        }
-        return std::reduce(s.begin(), s.end(), 0.0f);
-    }
-
     Id next_id_ = 0;
     std::vector<Id> ids_;
     std::vector<ColumnVector<dim>> vectors_;
