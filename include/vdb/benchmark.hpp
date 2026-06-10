@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <random>
 #include <span>
 #include <vector>
 
@@ -49,7 +48,7 @@ struct Dataset {
     std::size_t k = 0;  // neighbours per query in ground_truth
     std::vector<float> base;   // num_base * dim
     std::vector<float> query;  // num_query * dim
-    std::vector<std::vector<VectorStore::Id>> ground_truth;  // per query
+    std::vector<std::vector<Id>> ground_truth;  // per query
 
     [[nodiscard]] std::size_t num_base() const noexcept { return base.size() / dim; }
     [[nodiscard]] std::size_t num_query() const noexcept { return query.size() / dim; }
@@ -62,53 +61,20 @@ struct Dataset {
     }
 };
 
-// Generates a reproducible dataset of uniform-random vectors and computes
-// exact ground truth via a brute-force flat scan. `seed` makes runs
-// repeatable so benchmark numbers are comparable across code changes.
-[[nodiscard]] inline Dataset make_random_dataset(std::size_t num_base,
-                                                 std::size_t num_query,
-                                                 std::size_t dim,
-                                                 std::size_t k,
-                                                 std::uint64_t seed = 42) {
-    Dataset ds;
-    ds.dim = dim;
-    ds.k = k;
-
-    std::mt19937_64 rng(seed);
-    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-
-    ds.base.resize(num_base * dim);
-    for (auto& x : ds.base) x = dist(rng);
-
-    ds.query.resize(num_query * dim);
-    for (auto& x : ds.query) x = dist(rng);
-
-    // Build an exact oracle from the flat store and record true k-NN.
-    VectorStore oracle(dim);
-    for (std::size_t i = 0; i < num_base; ++i) {
-        oracle.add(ds.base_vec(i));
-    }
-    ds.ground_truth.reserve(num_query);
-    for (std::size_t q = 0; q < num_query; ++q) {
-        ds.ground_truth.push_back(oracle.search(ds.query_vec(q), k));
-    }
-    return ds;
-}
-
 // --- Recall -----------------------------------------------------------------
 // recall@k = |returned ∩ truth| / |truth|. Order within each list is ignored;
 // we only care which ids were found. Both lists are assumed to address the
 // same k (the caller passes matching k's).
-[[nodiscard]] inline double recall_at_k(std::span<const VectorStore::Id> got,
-                                        std::span<const VectorStore::Id> truth) {
+[[nodiscard]] inline double recall_at_k(std::span<const Id> got,
+                                        std::span<const Id> truth) {
     if (truth.empty()) return 1.0;
 
-    std::vector<VectorStore::Id> a(got.begin(), got.end());
-    std::vector<VectorStore::Id> b(truth.begin(), truth.end());
+    std::vector<Id> a(got.begin(), got.end());
+    std::vector<Id> b(truth.begin(), truth.end());
     std::ranges::sort(a);
     std::ranges::sort(b);
 
-    std::vector<VectorStore::Id> common;
+    std::vector<Id> common;
     std::ranges::set_intersection(a, b, std::back_inserter(common));
 
     return static_cast<double>(common.size()) / static_cast<double>(truth.size());
@@ -120,7 +86,7 @@ struct Dataset {
 // changes to the benchmark code below.
 template <typename T>
 concept VectorIndex = requires(const T idx, std::span<const float> q, std::size_t k) {
-    { idx.search(q, k) } -> std::same_as<std::vector<VectorStore::Id>>;
+    { idx.search(q, k) } -> std::same_as<std::vector<Id>>;
 };
 
 struct BenchmarkResult {

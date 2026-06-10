@@ -68,10 +68,10 @@ namespace vdb {
 
     ds.ground_truth.reserve(neighbors.size());
     for (const auto& row : neighbors) {
-        std::vector<VectorStore::Id> truth;
+        std::vector<Id> truth;
         truth.reserve(k);
         for (std::size_t i = 0; i < k; ++i) {
-            truth.push_back(static_cast<VectorStore::Id>(row[i]));
+            truth.push_back(static_cast<Id>(row[i]));
         }
         ds.ground_truth.push_back(std::move(truth));
     }

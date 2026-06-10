@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(time clang++ -std=c++23 -fsyntax-only -Iinclude scratch/check.cpp)",
+      "Bash(cmake --preset dev)",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/dev/compile_commands.json'\\)\\);e=[x for x in d if 'check.cpp' in x['file']];print\\(e[0]['command'][:300] if e else 'NOT FOUND'\\)\")",
+      "Read(//Users/daniel/.config/clangd/**)",
+      "Bash(pkill -9 clangd)"
+    ]
+  }
+}

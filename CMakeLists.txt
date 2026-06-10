@@ -25,10 +25,6 @@ target_compile_options(vdb_warnings INTERFACE
 add_library(vdb INTERFACE)
 target_include_directories(vdb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# --- The CLI executable -----------------------------------------------------
-add_executable(vdb_cli src/main.cpp)
-target_link_libraries(vdb_cli PRIVATE vdb vdb_warnings)
-
 # --- HDF5 / HighFive (for loading ann-benchmarks datasets) -------------------
 # HighFive is a header-only C++ wrapper over the system HDF5 C library.
 include(FetchContent)
@@ -50,6 +46,16 @@ FetchContent_MakeAvailable(HighFive)
 # --- The benchmark harness --------------------------------------------------
 add_executable(vdb_bench src/bench_main.cpp)
 target_link_libraries(vdb_bench PRIVATE vdb vdb_warnings HighFive)
+
+# --- Scratch syntax-check (dev only) ----------------------------------------
+# A throwaway TU that explicitly instantiates VectorStore so clangd reports
+# template-instantiation errors live in the editor. EXCLUDE_FROM_ALL so it
+# never builds as part of the project; it only needs to appear in
+# compile_commands.json so the language server knows its flags.
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/scratch/check.cpp)
+  add_library(vdb_scratch_check OBJECT EXCLUDE_FROM_ALL scratch/check.cpp)
+  target_link_libraries(vdb_scratch_check PRIVATE vdb)
+endif()
 
 # --- Tests ------------------------------------------------------------------
 include(CTest)

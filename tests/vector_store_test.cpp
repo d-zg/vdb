@@ -6,7 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("add assigns sequential ids and grows size") {
-    vdb::VectorStore store(2);
+    vdb::VectorStore<2> store;
     REQUIRE(store.size() == 0);
 
     const auto a = store.add(std::array{1.0f, 2.0f});
@@ -18,13 +18,13 @@ TEST_CASE("add assigns sequential ids and grows size") {
 }
 
 TEST_CASE("add rejects wrong-dimension input") {
-    vdb::VectorStore store(3);
+    vdb::VectorStore<3> store;
     const auto bad = std::array{1.0f, 2.0f};
     REQUIRE_THROWS_AS(store.add(bad), std::invalid_argument);
 }
 
 TEST_CASE("search returns nearest neighbours closest-first") {
-    vdb::VectorStore store(2);
+    vdb::VectorStore<2> store;
     const auto origin = store.add(std::array{0.0f, 0.0f});
     const auto near = store.add(std::array{0.1f, 0.0f});
     const auto far = store.add(std::array{5.0f, 5.0f});
@@ -38,7 +38,7 @@ TEST_CASE("search returns nearest neighbours closest-first") {
 }
 
 TEST_CASE("search clamps k to the number of stored vectors") {
-    vdb::VectorStore store(1);
+    vdb::VectorStore<1> store;
     store.add(std::array{1.0f});
     const auto results = store.search(std::array{0.0f}, 10);
     REQUIRE(results.size() == 1);
