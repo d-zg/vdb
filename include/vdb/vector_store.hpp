@@ -30,7 +30,7 @@ private:
 
 template<size_t dim> 
 float l2_distance(const ColumnVector<dim>& a, const ColumnVector<dim>& b) {
-    const size_t kLanes = 8;
+    const size_t kLanes = 16;
     std::array<float, kLanes> s{};
     for (std::size_t i = 0; i < dim; i += kLanes) {
         for (std::size_t j = 0; j < kLanes; ++j) {
