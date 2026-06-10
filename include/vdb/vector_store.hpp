@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <span>
 #include <stdexcept>
 #include <utility>
@@ -57,33 +58,35 @@ public:
         }
 
         auto queryVector = ColumnVector<dim>(query.begin(), query.end()); 
-        std::vector<std::pair<double, Id>> scored;
+        std::vector<std::pair<float, Id>> scored;
         scored.reserve(size());
         for (std::size_t i = 0; i < vectors_.size(); ++i) {
-            const double d = l2_distance(queryVector, vectors_[i]);
+            auto d = l2_distance(queryVector, vectors_[i]);
             scored.push_back(std::make_pair(d, ids_[i]));
         }
 
-        std::sort(scored.begin(), scored.end());
-
         k = std::min(k, scored.size());
-        std::vector<Id> result;
+        std::partial_sort(scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(k), scored.end());
+        std::vector<Id> result; 
         result.reserve(k);
-        for (std::size_t i = 0; i < k; ++i) {
+        for (size_t i = 0; i < k; ++i) {
             result.push_back(scored[i].second);
-        }
+        };
         return result;
     }
 
     [[nodiscard]] std::size_t size() const noexcept { return ids_.size(); }
 
 private:
-    static double l2_distance(const ColumnVector<dim>& a, const ColumnVector<dim>& b) {
-        double sum = 0.0;
-        for (std::size_t i = 0; i < dim; ++i) {
-            sum += std::pow(static_cast<double>(a[i]) - static_cast<double>(b[i]), 2.0);
+    float l2_distance(const ColumnVector<dim>& a, const ColumnVector<dim>& b) const {
+        const size_t kLanes = 8;
+        std::array<float, kLanes> s{};
+        for (std::size_t i = 0; i < dim; i += kLanes) {
+            for (std::size_t j = 0; j < kLanes; ++j) {
+                s[j] += std::pow((a[i+j]) - (b[i+j]), 2.0f);
+            }
         }
-        return sum;
+        return std::reduce(s.begin(), s.end(), 0.0f);
     }
 
     Id next_id_ = 0;
